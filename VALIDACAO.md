@@ -70,4 +70,12 @@ git diff --check
 
 A API e seu PostgreSQL ficam em execução local; o banco temporário de testes é encerrado após os checks. Presença e mensagens não são persistidas, por projeto. A aplicação opera em uma instância e não foi hospedada publicamente.
 
-Publicação do código e estado da CI serão registrados após a confirmação no GitHub. Os resultados locais acima não equivalem a uma execução remota da CI.
+## Publicação e CI remota confirmadas
+
+Repositório **público**: [JoaoVictorAAbreu-Dev/lobbylive](https://github.com/JoaoVictorAAbreu-Dev/lobbylive), branch principal `main`, com commits separados de implementação, testes e infraestrutura/documentação.
+
+A [execução 40374750353](https://github.com/JoaoVictorAAbreu-Dev/lobbylive/actions/runs/40374750353), referente ao commit de entrega `be2522df0dea81d5f2fe0d953130ac468b10f9f9`, terminou com **success** em 26/10/2026. No runner GitHub passaram instalação, lint, typecheck, build, testes unitários, testes REST/Socket.IO com PostgreSQL real, verificação de diff e build da imagem Docker.
+
+O commit posterior apenas registra esta evidência e usa `[skip ci]`; o código e o workflow verificados permanecem os mesmos. Isso comprova a CI do projeto público; não altera nem resolve a restrição de faturamento anteriormente observada no repositório privado GameScore.
+
+Antes do envio, foi conferido que `.env`, dependências e artefatos de build não são rastreados e que o segredo JWT local não está nos arquivos públicos. O repositório GameScore permaneceu sem alterações.

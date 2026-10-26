@@ -6,6 +6,8 @@ Backend de salas multiplayer com **JWT, presença por conta e chat em tempo real
 
 **Stack:** Node.js 24, NestJS 11, TypeScript, Socket.IO 4, MikroORM 7.2, PostgreSQL 17, Docker, Jest e Supertest.
 
+**Validação:** 41 testes aprovados localmente, demonstração com dois clientes em Docker e [CI remota aprovada](https://github.com/JoaoVictorAAbreu-Dev/lobbylive/actions/runs/40374750353).
+
 ## Rodar em poucos comandos
 
 Pré-requisitos: Node.js 24, Docker Engine e plugin Docker Compose.
