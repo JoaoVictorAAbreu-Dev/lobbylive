@@ -1,0 +1,73 @@
+# Validação — LobbyLive
+
+Data: **26/10/2026**. Evidências locais com execução real, sem simular PostgreSQL ou o transporte Socket.IO.
+
+## Checks executados
+
+| Verificação | Resultado |
+|---|---|
+| ESLint sem reescrita | Aprovado |
+| TypeScript, incluindo testes | Aprovado |
+| Build compilado | Aprovado |
+| Jest unitário | 9 testes aprovados |
+| REST e Socket.IO E2E | 32 testes aprovados |
+| Auditoria npm | 0 vulnerabilidades reportadas |
+| Configuração e build Docker | Aprovados |
+| Migration em banco vazio e reexecução | Aprovadas; sem migrations pendentes |
+| Schema ORM versus PostgreSQL | Sem diferenças, verificado pela suíte |
+| Demo de dois clientes contra Docker | Entrada, snapshot, chat e saída aprovados |
+
+## Ambiente verificado
+
+- API em Docker na porta local **3002**, usuário `node` (UID 1000), com healthcheck.
+- PostgreSQL **17.11**, porta local **5434**, com volume persistente.
+- Banco E2E separado em tmpfs na porta **5435**. Os testes só limpam uma base cujo nome termina em `_test`.
+- Serviço `migrate` conclui com código **0** antes da API. CLI de desenvolvimento e serviço Docker reaplicados sem pendências.
+- Swagger renderizado e inspecionado no navegador em `http://localhost:3002/docs`, incluindo autenticação Bearer. A presença de todas as rotas no OpenAPI também é verificada por teste HTTP.
+
+## Casos de comportamento comprovados
+
+Autenticação com Argon2id/JWT, normalização e unicidade de nickname inclusive sob concorrência, login inválido com resposta genérica, rejeição de DTOs inválidos e proteção das rotas.
+
+Dois clientes reais entram e trocam mensagens; eventos não vazam para outra sala. Comandos inválidos retornam acknowledgement de erro ou `operation:error` quando não há callback. Um não membro não consegue consultar participantes nem enviar chat.
+
+Duas conexões da mesma conta ocupam uma vaga. Somente a última conexão saindo gera `participant:left`. Entrada/saída repetidas são idempotentes. A disputa simultânea pela última vaga aceita uma única conta. Desconexão limpa múltiplas salas; expiração do JWT também remove a presença. Reconexão precisa de entrada explícita e não recebe replay.
+
+## Reinício real da API e do banco
+
+Uma prova adicional criou duas contas sintéticas e uma sala, conectou dois clientes e enviou uma mensagem. Com ambos ativos, foram reiniciados **API e PostgreSQL** via Compose.
+
+Após recuperação:
+
+- Os mesmos usuários puderam fazer login com as senhas originais.
+- IDs, nicknames e datas das contas permaneceram idênticos.
+- A sala manteve ID, nome, capacidade, criador e data, com **zero participantes**.
+- Nova conexão recebeu `NOT_IN_ROOM` antes de entrar novamente.
+- Nenhuma mensagem anterior foi recuperada após entrar.
+
+A prova e `npm run demo` criam somente dados sintéticos e não os removem. Senhas e tokens não são impressos, gravados no relatório ou enviados ao repositório. `.env` fica ignorado pelo Git, com segredo JWT local aleatório.
+
+## Reprodução dos checks
+
+```bash
+npm ci --ignore-scripts
+npm run env:init
+npm run lint
+npm run typecheck
+npm run build
+npm test -- --runInBand
+docker compose --profile test up -d --wait test-db
+DB_PORT=5435 DB_USER=lobbylive DB_PASSWORD=lobbylive_test \
+  TEST_DB_NAME=lobbylive_test npm run test:e2e
+docker compose up --build -d --wait
+npm run demo
+npm run migration:pending
+docker compose run --rm migrate
+git diff --check
+```
+
+## Limites
+
+A API e seu PostgreSQL ficam em execução local; o banco temporário de testes é encerrado após os checks. Presença e mensagens não são persistidas, por projeto. A aplicação opera em uma instância e não foi hospedada publicamente.
+
+Publicação do código e estado da CI serão registrados após a confirmação no GitHub. Os resultados locais acima não equivalem a uma execução remota da CI.

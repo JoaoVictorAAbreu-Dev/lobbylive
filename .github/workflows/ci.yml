@@ -1,0 +1,38 @@
+name: LobbyLive CI
+on: [push, pull_request]
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17-bookworm
+        env:
+          POSTGRES_DB: lobbylive_test
+          POSTGRES_USER: lobbylive
+          POSTGRES_PASSWORD: lobbylive_test
+        ports: [5432:5432]
+        options: >-
+          --health-cmd "pg_isready -U lobbylive -d lobbylive_test"
+          --health-interval 3s --health-timeout 3s --health-retries 20
+    env:
+      DB_HOST: 127.0.0.1
+      DB_PORT: 5432
+      DB_USER: lobbylive
+      DB_PASSWORD: lobbylive_test
+      TEST_DB_NAME: lobbylive_test
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm run build
+      - run: npm test -- --runInBand
+      - run: npm run test:e2e
+      - run: git diff --check
+      - run: docker build -t lobbylive-api:ci .

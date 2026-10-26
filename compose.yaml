@@ -1,0 +1,62 @@
+name: lobbylive
+x-database: &database
+  DB_HOST: db
+  DB_PORT: 5432
+  DB_NAME: ${DB_NAME:-lobbylive}
+  DB_USER: ${DB_USER:-lobbylive}
+  DB_PASSWORD: ${DB_PASSWORD:-lobbylive_local}
+services:
+  db:
+    image: postgres:17-bookworm
+    environment:
+      POSTGRES_DB: ${DB_NAME:-lobbylive}
+      POSTGRES_USER: ${DB_USER:-lobbylive}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-lobbylive_local}
+    ports: ["127.0.0.1:${DB_PORT:-5434}:5432"]
+    volumes: ["postgres_data:/var/lib/postgresql/data"]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+  migrate:
+    build: .
+    image: lobbylive-api:local
+    environment: *database
+    command: ["npm", "run", "migration:up:prod"]
+    depends_on:
+      db: { condition: service_healthy }
+    restart: "no"
+  api:
+    build: .
+    image: lobbylive-api:local
+    environment:
+      <<: *database
+      PORT: 3002
+      JWT_SECRET: ${JWT_SECRET:?Execute npm run env:init para gerar .env}
+    ports: ["127.0.0.1:${PORT:-3002}:3002"]
+    depends_on:
+      db: { condition: service_healthy }
+      migrate: { condition: service_completed_successfully }
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3002/api/v1/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 5s
+      timeout: 5s
+      retries: 15
+      start_period: 10s
+  test-db:
+    image: postgres:17-bookworm
+    profiles: [test]
+    environment:
+      POSTGRES_DB: lobbylive_test
+      POSTGRES_USER: lobbylive
+      POSTGRES_PASSWORD: lobbylive_test
+    ports: ["127.0.0.1:5435:5432"]
+    tmpfs: [/var/lib/postgresql/data]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+volumes:
+  postgres_data:
