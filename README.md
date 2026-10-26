@@ -2,7 +2,7 @@
 
 [![LobbyLive CI](https://github.com/JoaoVictorAAbreu-Dev/lobbylive/actions/workflows/ci.yml/badge.svg)](https://github.com/JoaoVictorAAbreu-Dev/lobbylive/actions/workflows/ci.yml)
 
-Backend de salas multiplayer com **JWT, presença por conta e chat em tempo real**. Sem interface gráfica: dois clientes de terminal demonstram o fluxo completo.
+Aplicação de salas multiplayer com **frontend React, JWT, presença por conta e chat em tempo real**. A interface e os clientes de terminal usam o mesmo backend real.
 
 **Stack:** Node.js 24, NestJS 11, TypeScript, Socket.IO 4, MikroORM 7.2, PostgreSQL 17, Docker, Jest e Supertest.
 
@@ -16,11 +16,14 @@ Pré-requisitos: Node.js 24, Docker Engine e plugin Docker Compose.
 npm ci --ignore-scripts
 npm run env:init
 docker compose up --build -d --wait
+# Abra http://localhost:3003
+# Demonstração alternativa pelo terminal:
 npm run demo
 ```
 
 `env:init` gera um segredo JWT aleatório em `.env` com permissão `0600`; não imprime seu valor e preserva um arquivo existente. `.env` nunca é versionado. A imagem requer um segredo de pelo menos 32 bytes.
 
+- **[Interface web](http://localhost:3003)** — cadastro, login, salas, participantes e chat.
 - [Swagger REST](http://localhost:3002/docs)
 - [OpenAPI JSON](http://localhost:3002/docs-json)
 - REST: `http://localhost:3002/api/v1`
@@ -31,6 +34,29 @@ npm run demo
 O Compose independente chama-se `lobbylive`. O banco usa a porta local **5434** e a API **3002**, sem interferir nas portas do GameScore. O PostgreSQL precisa ficar saudável; em seguida `migrate` aplica as migrations e termina com código 0; só então a API inicia. `Exited (0)` é o estado normal de `migrate`.
 
 A API roda como usuário `node`, sem root; portas são publicadas somente em `127.0.0.1`. O volume `postgres_data` conserva usuários e salas. `docker compose stop` e `docker compose start` não apagam os dados. Não execute `down -v` se precisar preservá-los.
+
+## Interface web
+
+![Chat com duas contas conectadas pela interface](docs/screenshots/frontend-chat.png)
+
+Abra **http://localhost:3003** após iniciar o Compose. Crie uma conta, crie ou escolha uma sala e envie mensagens. Abra outra aba e entre com outra conta para observar presença, chat e saída em tempo real.
+
+A interface usa React/TypeScript e Vite em `web/`. Um Nginx no Compose entrega os arquivos e encaminha `/api` e `/socket.io` à API, mantendo a mesma origem e suportando upgrade WebSocket. O contrato do backend permanece intacto.
+
+A sessão e o token ficam **apenas na memória de cada aba**; recarregar exige novo login. Nenhum segredo JWT do servidor é enviado à interface. Ao perder conexão, as associações e mensagens locais são limpas. Use **Reconectar** e entre novamente nas salas. A interface não faz reenvio automático de mensagens sem confirmação; em caso de timeout, verifique a conversa antes de tentar novamente.
+
+O diretório é paginado; a busca filtra a página atual. **Atualizar** busca salas e contagens novamente. A presença das salas abertas é atualizada por eventos em tempo real. Mensagens locais são limitadas às 300 entradas mais recentes por sala e não são um histórico persistente.
+
+Para desenvolvimento com proxy Vite:
+
+```bash
+npm --prefix web ci --ignore-scripts
+npm run web:dev
+# http://localhost:5173 — requer API em http://127.0.0.1:3002
+npm run web:build
+```
+
+O layout possui regras responsivas, foco visível, labels nos formulários, diálogo modal e avisos de erro. Não inclui voz, upload de arquivos ou notificações fora da aba.
 
 ## Demonstração de dois clientes
 
@@ -162,7 +188,7 @@ Os testes E2E criam um servidor HTTP real em porta aleatória e clientes reais `
 
 Scripts adicionais: `migration:pending`, `migration:create`, `migration:up:prod`. `migration:down` desfaz a migration e **remove dados** na migration inicial; não faz parte do fluxo normal.
 
-A CI executa lint, typecheck, build, testes unitários/REST/Socket.IO com PostgreSQL 17 e build Docker. Confira a execução atual na [página do workflow](https://github.com/JoaoVictorAAbreu-Dev/lobbylive/actions/workflows/ci.yml).
+A CI executa lint, typecheck, build, testes unitários/REST/Socket.IO com PostgreSQL 17 e builds Docker da API e da interface. A CI também instala e compila `web/`. Confira a execução atual na [página do workflow](https://github.com/JoaoVictorAAbreu-Dev/lobbylive/actions/workflows/ci.yml).
 
 ## Limites desta versão
 

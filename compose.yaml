@@ -44,6 +44,19 @@ services:
       timeout: 5s
       retries: 15
       start_period: 10s
+  web:
+    build:
+      context: .
+      dockerfile: web/Dockerfile
+    image: lobbylive-web:local
+    ports: ["127.0.0.1:3003:80"]
+    depends_on:
+      api: { condition: service_healthy }
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1/"]
+      interval: 5s
+      timeout: 3s
+      retries: 15
   test-db:
     image: postgres:17-bookworm
     profiles: [test]

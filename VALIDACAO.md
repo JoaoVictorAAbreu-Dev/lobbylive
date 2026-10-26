@@ -79,3 +79,19 @@ A [execução 40374750353](https://github.com/JoaoVictorAAbreu-Dev/lobbylive/act
 O commit posterior apenas registra esta evidência e usa `[skip ci]`; o código e o workflow verificados permanecem os mesmos. Isso comprova a CI do projeto público; não altera nem resolve a restrição de faturamento anteriormente observada no repositório privado GameScore.
 
 Antes do envio, foi conferido que `.env`, dependências e artefatos de build não são rastreados e que o segredo JWT local não está nos arquivos públicos. O repositório GameScore permaneceu sem alterações.
+
+## Frontend React — validação no navegador em 26/10/2026
+
+Adicionado `web/`, servido pelo Compose na porta 3003. REST e Socket.IO passam pelo proxy Nginx da mesma origem. Nenhuma rota ou regra do backend foi alterada.
+
+Fluxo observado em dois clientes de navegador independentes:
+
+- Cadastro e login reais de duas contas sintéticas pela interface.
+- Criação de “Squad da noite” pelo modal e entrada automática do criador.
+- Atualização da lista e entrada da segunda conta: os dois clientes exibiram dois participantes.
+- Mensagens enviadas nos dois sentidos foram exibidas na conversa oposta e na própria.
+- Saída da segunda conta gerou aviso e reduziu a presença no primeiro cliente para uma pessoa.
+- Logout voltou à tela de acesso; senha incorreta exibiu “Nickname ou senha incorretos.”.
+- A primeira conta entrou em uma segunda sala sem sair da primeira; ambas apareceram na navegação lateral.
+
+A inspeção visual foi realizada no viewport disponibilizado pelo navegador do app. O CSS inclui breakpoints menores, mas não há prova visual específica de dispositivo móvel nesta rodada. Mensagens e sessões do teste são sintéticas. O token permanece apenas em memória; recarregamento exige login novamente.
