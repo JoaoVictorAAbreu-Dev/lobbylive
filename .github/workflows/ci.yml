@@ -29,6 +29,8 @@ jobs:
           node-version: 24
           cache: npm
       - run: npm ci --ignore-scripts
+      - run: npm --prefix web ci --ignore-scripts
+      - run: npm --prefix web run build
       - run: npm run lint
       - run: npm run typecheck
       - run: npm run build
@@ -36,3 +38,4 @@ jobs:
       - run: npm run test:e2e
       - run: git diff --check
       - run: docker build -t lobbylive-api:ci .
+      - run: docker build -f web/Dockerfile -t lobbylive-web:ci .
