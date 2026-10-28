@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="docs/assets/portfolio-banner.svg" alt="Banner de apresentação do projeto LobbyLive" width="100%"/>
+</p>
+
 # LobbyLive
 
 [![LobbyLive CI](https://github.com/JoaoVictorAAbreu-Dev/lobbylive/actions/workflows/ci.yml/badge.svg)](https://github.com/JoaoVictorAAbreu-Dev/lobbylive/actions/workflows/ci.yml)
